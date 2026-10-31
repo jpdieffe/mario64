@@ -4,3 +4,5 @@ html,body{background:#102a25!important;color:#fff6df;font-family:system-ui,sans-
 
 
 .touch-btn{text-align:center;padding:2px}@media(max-width:600px) and (orientation:portrait){#canvas{top:120px!important;height:75vw!important}#tb-l{left:20px!important;bottom:310px!important}#tb-r{right:20px!important;bottom:310px!important}#play-notice{bottom:270px}}
+
+.player-2 b{color:#b6f2d1}.player-2 .wedges .full{background:#65dda5}#yoshi-power{position:fixed;top:91px;left:10px;right:10px;text-align:center;z-index:91;font-size:10px;color:#e6ffca;text-shadow:0 1px 3px #000;pointer-events:none}#party-health{gap:8px}@media(max-width:600px) and (orientation:portrait){.health{flex-direction:column;gap:4px}.wedges i{width:7px}#yoshi-power{top:137px;font-size:9px}#canvas{top:160px!important}}@media(orientation:landscape) and (max-height:500px){#yoshi-power{top:70px;font-size:9px}.health{gap:6px}}

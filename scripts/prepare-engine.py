@@ -11,6 +11,10 @@ data = bytearray()
 files = []
 removed = 0
 for entry in metadata['files']:
+    if entry['filename'].endswith('/char-select-extra-chars-plus/actors/yoshi_player_geo.bin'):
+        asset = root / 'site/mods/assets/yoshi_player_geo.bin'
+        asset.parent.mkdir(parents=True, exist_ok=True)
+        asset.write_bytes(original[entry['start']:entry['end']])
     # Optional character packs/cafe/third-party mods are not part of this game.
     if '/mods/' in entry['filename'] or '/dynos/packs/' in entry['filename']:
         removed += entry['end'] - entry['start']
@@ -39,7 +43,7 @@ html = re.sub(r'<link[^>]+(?:manifest|apple-touch-icon)[^>]*>', '', html)
 html = re.sub(r'<link[^>]+rel="icon"[^>]*>', '<link rel="icon" href="./icon.svg" type="image/svg+xml">', html)
 html = html.replace('<title>SM64 CoopDX - Web</title>', '<title>Mario 64 Together · Play</title>')
 html = html.replace('</head>', '<link rel="stylesheet" href="./play.css"></head>')
-html = html.replace('<script async type="text/javascript" src="sm64coopdx.js"></script>', '<script src="./coop.js"></script><script async src="./engine/sm64coopdx.js"></script>')
+html = html.replace('<script async type="text/javascript" src="sm64coopdx.js"></script>', '<script src="./room-network.js"></script><script src="./coop.js"></script><script async src="./engine/sm64coopdx.js"></script>')
 html = html.replace("            conn.close();\n            return;", "            conn.on('open', function() { conn.send({together: 'full'}); setTimeout(function() { conn.close(); }, 300); });\n            return;")
 html = html.replace("conn.on('data', function(data) {", "conn.on('data', function(data) {\n          if (data && data.together === 'full') { window.togetherRoomFull(); return; }")
 html = html.replace("alert('Room", "window.togetherNotice('Room").replace("alert('Failed to join room", "window.togetherNotice('Failed to join room")
@@ -50,5 +54,10 @@ for file in ['sm64coopdx.js', 'sm64coopdx.wasm', 'sm64coopdx.data']:
     manifest['engine'][file] = {'bytes': len(blob), 'sha256': hashlib.sha256(blob).hexdigest()}
 rom = (root / 'site/roms/super-mario-64.z64').read_bytes()
 manifest['rom'] = {'sha1': hashlib.sha1(rom).hexdigest(), 'bytes': len(rom)}
+manifest['models'] = {}
+for name in ['yoshi_player_geo', 'tongue_geo']:
+    file = 'mods/assets/' + name + '.bin'
+    blob = (root / 'site' / file).read_bytes()
+    manifest['models'][file] = {'bytes': len(blob), 'sha256': hashlib.sha256(blob).hexdigest()}
 (root / 'site/engine-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8', newline='\n')
 print(f'Engine package: {len(data):,} bytes; removed {removed:,} bytes of optional packs/mods.')

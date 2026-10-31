@@ -18,5 +18,15 @@
   "rom": {
     "sha1": "9bef1128717f958171a4afac3ed78ee2bb4e86ce",
     "bytes": 8388608
+  },
+  "models": {
+    "mods/assets/yoshi_player_geo.bin": {
+      "bytes": 42996,
+      "sha256": "2a1c24f8fa770577c216057cd0b9077d4bc30e03947f3ce1cc827c1cad6ea6a8"
+    },
+    "mods/assets/tongue_geo.bin": {
+      "bytes": 411,
+      "sha256": "4ac92331189bf73f47f2caeeb17c8317ef41fc82d1a4055d048733e3a90b1e47"
+    }
   }
 }

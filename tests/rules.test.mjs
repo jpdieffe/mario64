@@ -4,14 +4,14 @@ import {readFileSync} from 'node:fs';
 import {lua,lauxlib,lualib,to_luastring,to_jsstring} from 'fengari';
 const mod=readFileSync('site/mods/together.lua','utf8');
 const fixture=`
-MAX_PLAYERS=2; PLAYER_INTERACTIONS_SOLID=1; LEVEL_CASTLE_GROUNDS=16
+MAX_PLAYERS=3; PLAYER_INTERACTIONS_SOLID=1; LEVEL_CASTLE_GROUNDS=16
 HOOK_BEFORE_MARIO_UPDATE=1; HOOK_UPDATE=2; HOOK_ON_DEATH=3; HOOK_ALLOW_PVP_ATTACK=4
 hooks={}; function hook_event(id,fn) hooks[id]=fn end
 server=true; function network_is_server() return server end
-gGlobalSyncTable={resetEpoch=0}; gPlayerSyncTable={[0]={},[1]={}}; gServerSettings={}
-gNetworkPlayers={[0]={connected=true,globalIndex=0,currLevelNum=16,currActNum=1},[1]={connected=true,globalIndex=1,currLevelNum=24,currActNum=3}}
+gGlobalSyncTable={resetEpoch=0}; gPlayerSyncTable={[0]={},[1]={},[2]={}}; gServerSettings={}
+gNetworkPlayers={[0]={connected=true,globalIndex=0,currLevelNum=16,currActNum=1},[1]={connected=true,globalIndex=1,currLevelNum=24,currActNum=3},[2]={connected=true,globalIndex=2,currLevelNum=9,currActNum=2}}
 function mario() return {playerIndex=0,health=0x880,pos={x=0,y=0,z=0},vel={x=0,y=0,z=0},controller={},bounceSquishTimer=0,action=0} end
-gMarioStates={[0]=mario(),[1]=mario()}; m=gMarioStates[0]; warps={}
+gMarioStates={[0]=mario(),[1]=mario(),[2]=mario()}; m=gMarioStates[0]; warps={}
 function warp_to_level(level,area,act) table.insert(warps,{level,area,act});return true end
 function print() end
 function frame() hooks[1](m); hooks[2]() end
@@ -44,4 +44,10 @@ test('friendly attacks cause no damage; disconnected requests cannot reset the t
 assert(hooks[4]()==false); gNetworkPlayers[1].connected=false
 gPlayerSyncTable[1].deathRequest='0:1'; frame(); assert(gGlobalSyncTable.resetEpoch==0)
 gNetworkPlayers[1].connected=true; gPlayerSyncTable[1]={}; frame(); assert(gGlobalSyncTable.resetEpoch==0)
+`));
+
+test('Yoshi death resets all three at Yoshi course and concurrent deaths coalesce',()=>run(`
+frame(); gPlayerSyncTable[2].deathRequest='0:1'; frame(); assert(gGlobalSyncTable.resetVictim==2)
+for i=1,36 do frame() end; assert(#warps==1 and warps[1][1]==9 and m.health==0x880)
+for i=1,90 do frame() end;gPlayerSyncTable[0].deathRequest='1:1';gPlayerSyncTable[1].deathRequest='1:1';gPlayerSyncTable[2].deathRequest='1:2';frame();assert(gGlobalSyncTable.resetEpoch==2)
 `));

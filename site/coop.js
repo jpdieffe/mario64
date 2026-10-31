@@ -8,11 +8,11 @@
   const $ = s => document.querySelector(s);
   const ui = document.createElement('div');
   ui.id = 'together-ui';
-  ui.innerHTML = `<div class="session-bar"><a href="./" class="home-link">← Leave</a><strong>ROOM <span id="code"></span></strong><span id="session-status">Loading the castle…</span><button id="invite">Invite ↗</button><button id="sound">Enable sound</button><button id="expand">Expand</button><button id="controls-help">?</button></div><div id="party-health"></div><div id="party-reset" hidden><strong>One team. One more try.</strong><span>Both players are restarting at the course entrance.</span></div><div id="play-notice" role="status"></div><dialog id="play-help"><h2>Better together.</h2><p>Walk into the same level to explore together. Jump onto your teammate’s head for a bounce. Have them crouch with Z for a bigger boost. Friendly attacks do no damage.</p><p>Each player has eight health wedges. If either player dies or falls into a pit, both restart at the failed course’s entrance. Collected stars are kept.</p><p><b>Keyboard:</b> WASD moves · Z jumps · X punches/dives · Shift crouches/ground-pounds · Enter pauses · arrows move the camera · Q centers it · T opens chat.</p><p><b>Phone:</b> rotate sideways, use the left stick and A/B/Z buttons. Camera arrows are on the right. Tap Enable sound after loading. Keep both game tabs visible.</p><p>Save progress stays in the host’s browser. Send the room code only to your friend. If a direct connection fails, configure TURN from the lobby’s connection options.</p><button id="close-help">Back to game</button></dialog>`;
+  ui.innerHTML = `<div class="session-bar"><a href="./" class="home-link">← Leave</a><strong>ROOM <span id="code"></span></strong><span id="session-status">Loading the castle…</span><button id="invite">Invite ↗</button><button id="sound">Enable sound</button><button id="expand">Expand</button><button id="controls-help">?</button></div><div id="party-health"></div><div id="yoshi-power" hidden></div><div id="party-reset" hidden><strong>One team. One more try.</strong><span>The whole team is restarting at the course entrance.</span></div><div id="play-notice" role="status"></div><dialog id="play-help"><h2>Better together.</h2><p>Walk into the same level to explore together. Jump onto your teammate’s head for a bounce. Have them crouch with Z for a bigger boost. Friendly attacks do no damage.</p><p>Each player has eight health wedges. If any player dies or falls into a pit, everyone restarts at the failed course’s entrance. Collected stars are kept.</p><p><b>Keyboard:</b> WASD moves · Z jumps · X punches/dives · Shift crouches/ground-pounds · Enter pauses · arrows move the camera · Q centers it · T opens chat.</p><p><b>Yoshi (third player):</b> B / X uses your tongue. Eat a Goomba to charge one fireball, then press again to spit it. Hold Z / Shift while spitting for a spinning burst. Bosses and other enemies cannot be swallowed. Normal jumping, crouching and head bouncing still work.</p><p><b>Phone:</b> rotate sideways, use the left stick and A/B/Z buttons. Camera arrows are on the right. Tap Enable sound after loading. Keep all game tabs visible.</p><p>Save progress stays in the host’s browser. Send the room code only to your friend. If a direct connection fails, configure TURN from the lobby’s connection options.</p><button id="close-help">Back to game</button></dialog>`;
   document.body.append(ui);
   $('#code').textContent = code;
   $('#overlay h1').textContent = 'Mario 64 Together';
-  $('#overlay .subtitle')?.replaceChildren(document.createTextNode('Two players. One adventure.'));
+  $('#overlay .subtitle')?.replaceChildren(document.createTextNode('Three players. One adventure.'));
   $('#rom-picker').style.display = 'none';
   $('#room-config').style.display = 'none';
   window.together = { state: null, role, code, errors: [], debug };
@@ -26,12 +26,17 @@
         const state = JSON.parse(text.slice(marker + 15));
         together.state = state;
         $('#party-reset').hidden = !state.resetting;
-        $('#session-status').textContent = state.players.length === 2 ? 'Two players together' : 'Waiting for your friend';
+        $('#session-status').textContent = `${state.players.length}/3 players together`;
+        const yoshi = state.localId === 2;
+        const attackLabel = yoshi ? (state.ammo ? 'B · Fireball' : 'B · Tongue') : 'B · Punch';
+        $('#tb-b').textContent = attackLabel; $('#tb-b').setAttribute('aria-label',attackLabel);
+        $('#yoshi-power').hidden = !yoshi;
+        $('#yoshi-power').textContent = state.ammo ? 'Fireball ready · B / X to spit · hold Z / Shift for a spinning burst' : 'B / X · Tongue — eat a Goomba to charge a fireball';
         const hud = $('#party-health'); hud.replaceChildren();
         for (const player of state.players.sort((a,b)=>a.id-b.id)) {
           const wedges = Math.max(0,Math.min(8,Math.floor(player.health/256)));
           const row = document.createElement('div'); row.className = `health player-${player.id}`;
-          const name = document.createElement('b'); name.textContent = `${player.id===0?'Mario':'Luigi'}${player.id===state.localId?' · you':''}`;row.append(name);
+          const name = document.createElement('b'); name.textContent = `${['Mario','Luigi','Yoshi'][player.id]||'Friend'}${player.id===state.localId?' · you':''}`;row.append(name);
           const meter = document.createElement('span');meter.className='wedges';meter.setAttribute('aria-label',`${wedges} of 8 health`);
           for(let i=0;i<8;i++){const wedge=document.createElement('i');wedge.className=i<wedges?'full':'';meter.append(wedge);}row.append(meter);hud.append(row);
         }
@@ -47,15 +52,18 @@
   // The supplied ROM is the asset source. This package starts with a normal,
   // empty save, and loads only the required co-op rules before creating a room.
   Module.preRun = [() => {
-    for(const dir of ['/sm64coopdx','/sm64coopdx/mods','/sm64coopdx/.tmp'])try{FS.mkdir(dir);}catch{}
+    for(const dir of ['/sm64coopdx','/sm64coopdx/mods','/sm64coopdx/mods/together','/sm64coopdx/mods/together/actors','/sm64coopdx/.tmp'])try{FS.mkdir(dir);}catch{}
     Module.addRunDependency('together-assets');
     Promise.all([
       fetch('./roms/super-mario-64.z64').then(r=>{if(!r.ok)throw Error('ROM download failed');return r.arrayBuffer();}),
-      fetch('./mods/together.lua').then(r=>{if(!r.ok)throw Error('Co-op rules download failed');return r.text();})
-    ]).then(([rom,lua])=>{
+      fetch('./mods/together.lua').then(r=>{if(!r.ok)throw Error('Co-op rules download failed');return r.text();}),
+      fetch('./mods/yoshi.lua').then(r=>{if(!r.ok)throw Error('Yoshi rules download failed');return r.text();}),
+      ...['yoshi_player_geo','tongue_geo'].map(name=>fetch(`./mods/assets/${name}.bin`).then(r=>{if(!r.ok)throw Error('Yoshi model download failed');return r.arrayBuffer();}))
+    ]).then(([rom,lua,yoshi,...models])=>{
       if(rom.byteLength!==8388608||new DataView(rom).getUint32(0)!==0x80371240)throw Error('The supplied US ROM could not be loaded.');
       FS.writeFile('/sm64coopdx/baserom.us.z64',new Uint8Array(rom));
-      FS.writeFile('/sm64coopdx/mods/together.lua',lua.replace('local DEBUG = false',`local DEBUG = ${debug}`));
+      FS.writeFile('/sm64coopdx/mods/together/main.lua',lua.replace('local DEBUG = false',`local DEBUG = ${debug}`)+'\n'+yoshi);
+      ['yoshi_player_geo','tongue_geo'].forEach((name,i)=>FS.writeFile(`/sm64coopdx/mods/together/actors/${name}.bin`,new Uint8Array(models[i])));
       let saved = '';
       try{saved=localStorage.getItem('mario64together_config')||'';}catch{}
       const forced = {
@@ -63,13 +71,13 @@
         coop_player_palette_cap:role==='host'?'ff 00 00':'00 a8 20',
         coop_player_palette_shirt:role==='host'?'ff 00 00':'00 a8 20',
         coop_player_palette_emblem:role==='host'?'ff 00 00':'00 a8 20',
-        amount_of_players:2,bubble_death:'false',coop_player_interaction:1,coop_player_knockback_strength:0,
+        amount_of_players:3,bubble_death:'false',coop_player_interaction:1,coop_player_knockback_strength:0,
         skip_intro:'true',language:'English',coop_nametags:'true',coop_host_save_slot:1,
         key_a:'002c 1000 ffff',key_b:'002d 1001 ffff',key_z:'002a 1007 ffff',key_start:'001c 1006 ffff',
         key_r:'0010 100a ffff',key_l:'0012 1009 ffff',key_chat:'0014 ffff ffff',
         key_cup:'0148 ffff ffff',key_cdown:'0150 ffff ffff',key_cleft:'014b ffff ffff',key_cright:'014d ffff ffff'
       };
-      const config=saved.split('\n').filter(line=>line&&!Object.keys(forced).includes(line.split(' ')[0])&&!line.startsWith('enable-mod:')).join('\n')+'\n'+Object.entries(forced).map(([k,v])=>`${k} ${v}`).join('\n')+'\nenable-mod: together.lua\n';
+      const config=saved.split('\n').filter(line=>line&&!Object.keys(forced).includes(line.split(' ')[0])&&!line.startsWith('enable-mod:')).join('\n')+'\n'+Object.entries(forced).map(([k,v])=>`${k} ${v}`).join('\n')+'\nenable-mod: together\n';
       FS.writeFile('/sm64coopdx/sm64config.txt',config);
       try{const save=localStorage.getItem('mario64together_save');if(save)FS.writeFile('/sm64coopdx/sm64_save_file.bin',Uint8Array.from(atob(save),c=>c.charCodeAt(0)));}catch{}
       romReady=true;
@@ -78,8 +86,9 @@
   }];
   Module.onRuntimeInitialized = () => {setStatus('Opening your co-op adventure…');watchForGameStart();};
   // Never auto-promote a guest into a new empty room when their host is absent.
-  PeerNetwork.MAX_SLOTS=1;
-  PeerNetwork.hostPeerIdFromRoom = room => 'mario64-together-v1-' + room;
+  PeerNetwork.MAX_SLOTS=2;
+  PeerNetwork.hostPeerIdFromRoom = room => 'mario64-together-v2-' + room;
+  installTogetherNetwork(PeerNetwork,()=>together.state);
   let settings={};try{settings=JSON.parse(sessionStorage.getItem('mario64-network')||'{}');}catch{}
   const NativePeer=window.Peer;
   window.Peer=class extends NativePeer {
@@ -94,7 +103,7 @@
     this.roomId=room;this.hostPeerId=this.hostPeerIdFromRoom(room);
     if(role==='join'){this._joinAsClient();return;}
     this.peer=new Peer(this.hostPeerId);
-    this.peer.on('open',()=>{this.isHost=true;this._setupHost();BackgroundGuard.start();notice('Room ready. Tap Invite to bring your friend.');});
+    this.peer.on('open',()=>{this.isHost=true;this._setupHost();BackgroundGuard.start();notice('Room ready. Tap Invite to bring your friends.');});
     this.peer.on('disconnected',()=>{if(!this._shuttingDown)this.peer.reconnect();});
   };
   const connectToHost=PeerNetwork._connectToHost;
@@ -105,10 +114,10 @@
     connection.on('open',()=>notice('Connected. Your teammate is here.'));
     connection.on('close',()=>{if(!this._shuttingDown)notice('Host disconnected. Reconnecting… Keep the host game open.');});
   };
-  window.togetherRoomFull=()=>{notice('This adventure already has two players. Leave and create another room.');PeerNetwork.shutdown();};
+  window.togetherRoomFull=()=>{notice('This adventure already has three players. Leave and create another room.');PeerNetwork.shutdown();};
   // Keep built-in touch buttons consistent with the keyboard bindings above.
   Object.assign(TouchGamepad.KEYS,{'tb-a':0x2c,'tb-b':0x2d,'tb-z':0x2a,'tb-start':0x1c,'tb-r':0x10,'tb-l':0x12});
-  const labels={'tb-a':'A · Jump','tb-b':'B · Punch','tb-z':'Z · Crouch','tb-start':'Start'};
+  const labels={'tb-a':'A · Jump','tb-b':'B · Punch','tb-z':'Z · Crouch','tb-start':'Start','tb-cu':'▲','tb-cd':'▼','tb-cl':'◀','tb-cr':'▶'};
   for(const [id,label] of Object.entries(labels))document.getElementById(id).textContent=label;
   for(const id of Object.keys(TouchGamepad.KEYS)){const el=document.getElementById(id);el?.setAttribute('role','button');el?.setAttribute('aria-label',labels[id]||el.textContent);}
   const touchReleases=new Map();

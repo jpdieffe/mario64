@@ -5,6 +5,8 @@ SM64CoopDX: Coop Deluxe Team, djoslin0, SM64 decompilation contributors.
 Web port: https://github.com/zalo/sm64coopdx/tree/1277ec162448cbb8944100a8411ec6bb394c9d10
 The upstream project has no repository-wide license file; component notices retain their original terms.
 
+Playable Yoshi model: Coop Team, from ULTRA BROS TEAM's char-select-extra-chars-plus pack in the pinned upstream distribution. Native Mario animations. No voice pack is included. Tongue geometry and gameplay integration are original to this project.
+
 PeerJS 1.5.5
 Copyright (c) 2015 Michelle Bu and Eric Zhang, http://peerjs.com
 

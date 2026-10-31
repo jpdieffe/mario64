@@ -1,5 +1,5 @@
 -- name: Mario 64 Together
--- description: Two visible teammates, separate health, native head bouncing, shared death and restart.
+-- description: Three visible teammates, separate health, native head bouncing, shared death and restart.
 -- incompatible: gamemode
 
 local DEBUG = false
@@ -73,7 +73,7 @@ local function before_update(m)
             m.freeze = 0
             m.health = 0x880
             m.invincTimer = 90
-            -- Both teammates restart at the failed course's entrance, even
+            -- All teammates restart at the failed course's entrance, even
             -- when they were in different rooms or levels when death occurred.
             local ok = warp_to_level(gGlobalSyncTable.resetLevel or LEVEL_CASTLE_GROUNDS, 1, gGlobalSyncTable.resetAct or 1)
             if not ok then warp_to_level(LEVEL_CASTLE_GROUNDS, 1, 1) end
@@ -108,10 +108,10 @@ local function update()
         local np = gNetworkPlayers[i]
         if np.connected then
             local p = gMarioStates[i]
-            rows[#rows + 1] = string.format('{"id":%d,"health":%d,"x":%.1f,"y":%.1f,"z":%.1f,"vy":%.1f,"action":%d,"level":%d,"squish":%d}', np.globalIndex, p.health, p.pos.x, p.pos.y, p.pos.z, p.vel.y, p.action, np.currLevelNum, p.bounceSquishTimer)
+            rows[#rows + 1] = string.format('{"id":%d,"health":%d,"x":%.1f,"y":%.1f,"z":%.1f,"vy":%.1f,"action":%d,"level":%d,"squish":%d,"model":%d}', np.globalIndex, p.health, p.pos.x, p.pos.y, p.pos.z, p.vel.y, p.action, np.currLevelNum, p.bounceSquishTimer, obj_get_model_id_extended and obj_get_model_id_extended(p.marioObj) or 0)
         end
     end
-    print('TOGETHER_STATE:{"epoch":' .. (gGlobalSyncTable.resetEpoch or 0) .. ',"resetting":' .. tostring(resetTimer > 0 or pending) .. ',"localId":' .. gNetworkPlayers[0].globalIndex .. ',"bounces":' .. bounceCount .. ',"lastReset":' .. lastReset .. ',"players":[' .. table.concat(rows, ',') .. ']}')
+    print('TOGETHER_STATE:{"epoch":' .. (gGlobalSyncTable.resetEpoch or 0) .. ',"resetting":' .. tostring(resetTimer > 0 or pending) .. ',"localId":' .. gNetworkPlayers[0].globalIndex .. ',"bounces":' .. bounceCount .. ',"lastReset":' .. lastReset .. ',"ammo":' .. (gPlayerSyncTable[0].yoshiAmmo or 0) .. ',"eaten":' .. (gPlayerSyncTable[0].yoshiEaten or 0) .. ',"shots":' .. (gPlayerSyncTable[0].yoshiShots or 0) .. ',"hits":' .. (gPlayerSyncTable[0].yoshiHits or 0) .. ',"tongues":' .. (gPlayerSyncTable[0].yoshiTongues or 0) .. ',"model":' .. (gPlayerSyncTable[0].yoshiModel or 0) .. (together_debug_state and together_debug_state() or '') .. ',"players":[' .. table.concat(rows, ',') .. ']}')
 end
 
 hook_event(HOOK_BEFORE_MARIO_UPDATE, before_update)

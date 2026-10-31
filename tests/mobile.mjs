@@ -7,16 +7,16 @@ const server=createServer(4199),signaling=localSignaling();
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-unsafe-swiftshader']});
 const pages=[];const errors=[];await mkdir('test-results',{recursive:true});
 try{
- for(const [device,role] of [['Pixel 7','host'],['iPhone 13','join']]){
+ for(const [device,role] of [['Pixel 7','host'],['iPhone 13','join'],['iPhone 13','join']]){
   const page=await browser.newPage({...devices[device],viewport:{width:844,height:390},deviceScaleFactor:1});pages.push(page);
   page.on('pageerror',e=>errors.push(e.message));await signaling(page);
   await page.goto('http://127.0.0.1:4199/');await page.screenshot({path:`test-results/lobby-${role}.png`});
-  await page.goto(`http://127.0.0.1:4199/play.html?role=${role}&room=MABL`);
+  await page.goto(`http://127.0.0.1:4199/play.html?role=${role}&room=MABL&debug`);
   await page.waitForFunction(()=>window.together?.state?.players?.length,null,{timeout:120000});
   console.log(device,'booted');
  }
  for(const page of pages){
-  await page.waitForFunction(()=>together.state.players.length===2);await page.waitForTimeout(2000);
+  await page.waitForFunction(()=>together.state.players.length===3);await page.waitForTimeout(2000);
   assert.equal(await page.locator('#touch-gamepad').isVisible(),true);
   // Hold and move the real on-screen analog stick through browser touch events.
   const before=await page.evaluate(()=>together.state.players.find(p=>p.id===together.state.localId));
@@ -33,6 +33,18 @@ try{
   await page.waitForFunction(y=>together.state.players.find(p=>p.id===together.state.localId).y>y+15,after.y,{timeout:5000});
   await page.locator('#sound').tap();await page.waitForFunction(()=>document.querySelector('#sound').textContent==='Sound on');
   for(const id of ['tb-start','tb-r','tb-l'])assert.equal(await page.locator('#'+id).evaluate(el=>{const r=el.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===el;}),true,`${id} is reachable`);
+  if((await page.evaluate(()=>together.state.localId))===2){
+   async function command(text){await page.keyboard.press('KeyT');await page.waitForTimeout(100);await page.keyboard.type(text,{delay:25});await page.keyboard.press('Enter');await page.waitForTimeout(350);}
+   await command('/cooptest base');await command('/yoshitest face');await command('/yoshitest prey');
+   await page.locator('#tb-b').tap();await page.waitForFunction(()=>together.state.ammo===1,null,{timeout:10000});
+   assert.match(await page.locator('#tb-b').getAttribute('aria-label'),/Fireball/);
+   await page.waitForTimeout(1000);await command('/yoshitest target');await page.locator('#tb-b').tap();
+   await page.waitForFunction(()=>together.state.shots===1&&together.state.hits>0,null,{timeout:10000});
+   assert.equal(await page.locator('#yoshi-power').isVisible(),true);
+   console.log('PHONE YOSHI TONGUE / EAT / FIREBALL PASS');
+  }
+  for(const id of ['tb-a','tb-b','tb-z'])assert.equal(await page.locator('#'+id).evaluate(el=>{const r=el.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===el;}),true,`${id} is reachable`);
+  assert.equal(await page.locator('#party-health .health').count(),3);
   await page.screenshot({path:`test-results/mobile-${pages.indexOf(page)}.png`});
   await page.setViewportSize({width:390,height:844});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'portrait fits screen');
@@ -40,6 +52,6 @@ try{
   await page.screenshot({path:`test-results/portrait-${pages.indexOf(page)}.png`});
   await page.setViewportSize({width:844,height:390});
  }
- assert.deepEqual(errors,[]);console.log('ANDROID / IPHONE VIEWPORTS, TOUCH MOVEMENT, JUMP, AUDIO AND CONTROLS PASS (Chromium emulation)');
+ for(const p of pages)assert.deepEqual(await p.evaluate(()=>together.errors),[]);assert.deepEqual(errors,[]);console.log('ANDROID / IPHONE VIEWPORTS, TOUCH MOVEMENT, JUMP, AUDIO AND CONTROLS PASS (Chromium emulation)');
 }catch(error){for(const [i,page] of pages.entries()){console.error(await page.evaluate(()=>({state:together.state,errors:together.errors})));await page.screenshot({path:`test-results/mobile-failure-${i}.png`});}throw error;}
 finally{await browser.close();server.close();}

@@ -16,5 +16,10 @@ for(const [file,expected] of Object.entries(manifest.engine)){
  if(data.length!==expected.bytes||createHash('sha256').update(data).digest('hex')!==expected.sha256)throw Error('Engine artifact mismatch: '+file);
 }
 const rom=readFileSync('site/roms/super-mario-64.z64');
+for(const [file,expected] of Object.entries(manifest.models)){
+ const data=readFileSync('site/'+file);
+ if(data.length!==expected.bytes||createHash('sha256').update(data).digest('hex')!==expected.sha256)throw Error('Character model mismatch: '+file);
+}
+for(const file of ['together.lua','yoshi.lua'])readFileSync('site/mods/'+file);
 if(rom.length!==manifest.rom.bytes||createHash('sha1').update(rom).digest('hex')!==manifest.rom.sha1)throw Error('ROM identity mismatch');
 console.log('Syntax, page assets and pinned engine/ROM identities verified.');
