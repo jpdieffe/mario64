@@ -8,7 +8,7 @@ const server=process.env.TEST_URL?null:createServer(4198);
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--autoplay-policy=no-user-gesture-required','--enable-unsafe-swiftshader']});
 const signaling=localSignaling(); const pages=[]; const errors=[];
 await mkdir('test-results',{recursive:true});
-async function command(page,text){await page.keyboard.press('KeyT');await page.waitForTimeout(150);await page.keyboard.type('/cooptest '+text,{delay:30});await page.keyboard.press('Enter');await page.waitForTimeout(200);}
+async function command(page,text){await page.keyboard.press('KeyT',{delay:100});await page.waitForTimeout(150);await page.keyboard.type('/cooptest '+text,{delay:30});await page.keyboard.press('Enter',{delay:100});await page.waitForTimeout(200);}
 async function state(page){return page.evaluate(()=>together.state);}
 async function wait(page,fn,arg){await page.waitForFunction(fn,arg,{timeout:45000});}
 try{
@@ -36,7 +36,7 @@ try{
  await host.screenshot({path:'test-results/three-players.png'});
  // Use real input, real synced enemies and native projectile reactions.
  await command(yoshi,'base');await command(guest,'above');
- async function yoshicmd(text){await yoshi.keyboard.press('KeyT');await yoshi.waitForTimeout(150);await yoshi.keyboard.type('/yoshitest '+text,{delay:25});await yoshi.keyboard.press('Enter');await yoshi.waitForTimeout(250);}
+ async function yoshicmd(text){await yoshi.keyboard.press('KeyT',{delay:100});await yoshi.waitForTimeout(150);await yoshi.keyboard.type('/yoshitest '+text,{delay:25});await yoshi.keyboard.press('Enter',{delay:100});await yoshi.waitForTimeout(250);}
  await yoshicmd('face');await yoshicmd('prey');
  for(const p of pages)await wait(p,()=>together.state.goombas===1);
  await yoshi.keyboard.press('KeyX',{delay:120});

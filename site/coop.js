@@ -16,6 +16,20 @@
   $('#rom-picker').style.display = 'none';
   $('#room-config').style.display = 'none';
   window.together = { state: null, role, code, errors: [], debug };
+  // Desktop SDL already receives keyboard input. The mobile proxy forwards
+  // text separately; never let both its original and forwarded keys reach SDL.
+  const showMobileInput=WebMobileInput.show;
+  WebMobileInput.show=function(){
+    if(!matchMedia('(pointer:coarse)').matches)return;
+    showMobileInput.call(this);
+  };
+  for(const type of ['keydown','keyup','keypress'])window.addEventListener(type,event=>{
+    if(event.target!==WebMobileInput._el)return;
+    event.stopImmediatePropagation();
+    if(type!=='keypress')$('#canvas').dispatchEvent(new KeyboardEvent(type,{
+      key:event.key,code:event.code,keyCode:event.keyCode,which:event.which,repeat:event.repeat,bubbles:true
+    }));
+  },true);
   function notice(text) { $('#play-notice').textContent = text; }
   window.togetherNotice = notice;
   const originalPrint = Module.print;

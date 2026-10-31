@@ -34,7 +34,7 @@ try{
   await page.locator('#sound').tap();await page.waitForFunction(()=>document.querySelector('#sound').textContent==='Sound on');
   for(const id of ['tb-start','tb-r','tb-l'])assert.equal(await page.locator('#'+id).evaluate(el=>{const r=el.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===el;}),true,`${id} is reachable`);
   if((await page.evaluate(()=>together.state.localId))===2){
-   async function command(text){await page.keyboard.press('KeyT');await page.waitForTimeout(100);await page.keyboard.type(text,{delay:25});await page.keyboard.press('Enter');await page.waitForTimeout(350);}
+   async function command(text){await page.keyboard.press('KeyT',{delay:100});await page.waitForTimeout(100);await page.keyboard.type(text,{delay:25});await page.keyboard.press('Enter',{delay:100});await page.waitForTimeout(350);}
    await command('/cooptest base');await command('/yoshitest face');await command('/yoshitest prey');
    await page.locator('#tb-b').tap();await page.waitForFunction(()=>together.state.ammo===1,null,{timeout:10000});
    assert.match(await page.locator('#tb-b').getAttribute('aria-label'),/Fireball/);
