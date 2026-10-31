@@ -1,0 +1,6 @@
+.build/
+.browsers/
+.npm-cache/
+node_modules/
+test-results/
+*.log

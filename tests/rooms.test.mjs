@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {newCode,parseCode} from '../site/rooms.js';
+test('room codes accept typed codes and invitations',()=>{assert.equal(parseCode(' k7mx '),'K7MX');assert.equal(parseCode('https://jpdieffe.github.io/mario64/#room=K7MX'),'K7MX');assert.equal(parseCode('https://example.com/?room=K7MX'),'K7MX');assert.equal(parseCode('OOOO'),null);assert.equal(parseCode('<script>'),null);for(let i=0;i<100;i++){const code=newCode();assert.equal(parseCode(code),code);}});

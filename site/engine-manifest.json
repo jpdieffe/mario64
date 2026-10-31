@@ -1,0 +1,22 @@
+{
+  "source": "https://github.com/zalo/sm64coopdx",
+  "commit": "1277ec162448cbb8944100a8411ec6bb394c9d10",
+  "engine": {
+    "sm64coopdx.js": {
+      "bytes": 494951,
+      "sha256": "aaa1f91609f9639a58edd99b5240ff4db2c2affef345054b6c7b28c7f8a16ba3"
+    },
+    "sm64coopdx.wasm": {
+      "bytes": 59860367,
+      "sha256": "83a331d2701e382f7887a1146efa584913baade2d5d3db389c55c3c4ffc5ddb8"
+    },
+    "sm64coopdx.data": {
+      "bytes": 171583,
+      "sha256": "778aab278264f1dcf784898a24add6e50a8e8f85087909364fbc1f107d2368a0"
+    }
+  },
+  "rom": {
+    "sha1": "9bef1128717f958171a4afac3ed78ee2bb4e86ce",
+    "bytes": 8388608
+  }
+}

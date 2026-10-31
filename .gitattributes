@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.wasm binary
+*.data binary
+*.z64 binary
+# Preserve upstream formatting in generated/vendor artifacts and notices.
+site/engine/*.js -whitespace
+site/play.html -whitespace
+site/THIRD_PARTY_NOTICES.txt -whitespace
